@@ -34,7 +34,7 @@ public:
 		send_index = 0;
 	}
 	void AddFragment(TArray<FTransform>& in, int16 total, int16 offset, int32 index, double t) {
-		if (fragments_index != index) {
+		if (fragments_index < index) {
 			received = 0;
 			fragments.SetNumUninitialized(total);
 			fragments_index = index;

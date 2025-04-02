@@ -30,6 +30,7 @@ public:
 		limiter = 0.0;
 		head = 0;
 		boneCount = 0;
+		fragments_received = 0;
 		fragments_index = -1;
 		send_index = 0;
 	}
@@ -37,14 +38,19 @@ public:
 		if (fragments_index < index) {
 			received = 0;
 			fragments.SetNumUninitialized(total);
+			fragments_received = 0;
 			fragments_index = index;
 		}
-		received += in.Num();
-		for (int i = 0; i < in.Num(); i++) {
-			fragments[offset + i] = in[i];
-		}
-		if (received == total) {
-			AddFrame(fragments, t);
+		uint32 bitMask = 1 << (offset / 60);
+		if (!(fragments_received & bitMask)) {
+			fragments_received |= bitMask;
+			received += in.Num();
+			for (int i = 0; i < in.Num(); i++) {
+				fragments[offset + i] = in[i];
+			}
+			if (received == total) {
+				AddFrame(fragments, t);
+			}
 		}
 	}
 	void AddFrame(TArray<FTransform>& in, double t) {
@@ -116,6 +122,7 @@ public:
 	int32 head;
 	int32 boneCount;
 	TArray<FTransform> fragments;
+	uint32 fragments_received;
 	int32 fragments_index;
 	int16 received;
 	int32 send_index;

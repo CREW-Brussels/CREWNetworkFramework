@@ -90,7 +90,9 @@ void UCREWNetworkSubsystem::PushReplicatedPose(FName name, FPoseContext& Pose, f
 		MemoryWriter << num;
 		MemoryWriter << i;
 		TransformArraySerializer::SerializeCompressedTransforms(MemoryWriter, bufferPose);
-		Socket->SendTo(NetworkBuffer.GetData(), NetworkBuffer.Num(), byteSent, *MulticastAddr);
+		for (int j = 0; j < 4; j++) {
+			Socket->SendTo(NetworkBuffer.GetData(), NetworkBuffer.Num(), byteSent, *MulticastAddr);
+		}
 	}
 	found->send_index++;
 }

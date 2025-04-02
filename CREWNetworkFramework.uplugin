@@ -1,0 +1,30 @@
+{
+	"FileVersion": 1,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "CREW Network Framework",
+	"Description": "Replication Framework for server side trigger/action over 3 contexts",
+	"Category": "Other",
+	"CreatedBy": "CREW",
+	"CreatedByURL": "http://crew.brussels",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"Installed": true,
+	"Modules": [
+		{
+			"Name": "CREWNetwork",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "CREWNetworkEditor",
+			"Type": "UncookedOnly",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+
+	]
+}

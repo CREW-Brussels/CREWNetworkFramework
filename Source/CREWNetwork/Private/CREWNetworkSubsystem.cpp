@@ -245,24 +245,27 @@ void UCREWNetworkSubsystem::StartNetworking()
 
 bool UCREWNetworkSubsystem::BroadcastPresence(float DeltaTime)
 {
+    FScopeLock Lock(&NetworkCriticalSection);
     if (!UDPSocket)
         return true;
 
-    FString Message = FString::Printf(TEXT("PEER_IP:%s:TCP_PORT:%d"), *LocalIP, TCPPort);
-    TArray<uint8> Data;
-    Data.Append((uint8*)TCHAR_TO_ANSI(*Message), Message.Len());
+    FMemoryWriter MemoryWriter(NetworkBuffer, true);
+    int32 port = TCPPort;
+    MemoryWriter << LocalIP;
+    MemoryWriter << port;
 
     TSharedRef<FInternetAddr> BroadcastAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
     BroadcastAddr->SetIp(FIPv4Address(255, 255, 255, 255).Value);//SetBroadcastAddress();
     BroadcastAddr->SetPort(UDPPort);
 
     int32 BytesSent = 0;
-    UDPSocket->SendTo(Data.GetData(), Data.Num(), BytesSent, *BroadcastAddr);
+    UDPSocket->SendTo(NetworkBuffer.GetData(), NetworkBuffer.Num(), BytesSent, *BroadcastAddr);
     return true;
 }
 
 bool UCREWNetworkSubsystem::ListenForBroadcasts(float DeltaTime)
 {
+    FScopeLock Lock(&NetworkCriticalSection);
     if (!UDPSocket)
         return true;
 
@@ -273,24 +276,16 @@ bool UCREWNetworkSubsystem::ListenForBroadcasts(float DeltaTime)
 
     uint32 PendingDataSize = 0;
     while (UDPSocket->HasPendingData(PendingDataSize) && PendingDataSize > 0) {
-        if (UDPSocket->RecvFrom(Data.GetData(), Data.Num(), BytesRead, *RemoteAddr) && BytesRead > 0)
+        NetworkBuffer.SetNumUninitialized(PendingDataSize);
+        if (UDPSocket->RecvFrom(NetworkBuffer.GetData(), NetworkBuffer.Num(), BytesRead, *RemoteAddr) && BytesRead > 0)
         {
-            Data.SetNum(BytesRead);
-            FString Message = FString::FromBlob(Data.GetData(), BytesRead);
-            if (Message.StartsWith(TEXT("PEER_IP:")))
-            {
-                TArray<FString> Parts;
-                Message.ParseIntoArray(Parts, TEXT(":"), true);
-                if (Parts.Num() >= 4)
-                {
-                    FString PeerIP = Parts[1];
-                    int32 PeerPort = FCString::Atoi(*Parts[3]);
-                    if (PeerIP != LocalIP && LocalIP < PeerIP) // Connect only if "lower" IP
-                    {
-                        AttemptConnection(PeerIP, PeerPort);
-                    }
-                }
-            }
+            NetworkBuffer.SetNum(BytesRead);
+            FMemoryReader MemoryReader(NetworkBuffer);
+            FString ip;
+            int32 port;
+            MemoryReader << ip;
+            MemoryReader << port;
+            AttemptConnection(ip, port);
         }
     }
     return true;

@@ -169,6 +169,7 @@ void UCREWNetworkSubsystem::StopNetworking()
     {
         if (Elem.Value)
         {
+            UE_LOG(LogTemp, Log, TEXT("closing connection with: %s"), *Elem.Key);
             Elem.Value->Close();
             ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(Elem.Value);
         }

@@ -189,6 +189,7 @@ public:
 			s.Z = double(compressed[i * 10 + 9]) / 1000.0f;
 
 			Transforms[i].SetComponents(r, l, s);
+			Transforms[i].NormalizeRotation();
 		}
 	}
 };

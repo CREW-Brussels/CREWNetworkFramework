@@ -95,6 +95,7 @@ void UCREWNetworkSubsystem::PushReplicatedPose(FName name, FPoseContext& Pose, f
     TransformArraySerializer::SerializeCompressedTransforms(MemoryWriter, tempPose);
     for (auto p : ConnectedPeers) {
         p.Value->Send(NetworkBuffer.GetData(), NetworkBuffer.Num(), byteSent);
+        UE_LOG(LogTemp, Log, TEXT("Bytes sent: %d"), byteSent);
     }
 	/*int16 num = tempPose.Num();
 	int32 byteSent;
@@ -361,9 +362,12 @@ bool UCREWNetworkSubsystem::CheckForIncomingData(float DeltaTime)
             {
                 FScopeLock Lock(&NetworkCriticalSection);
                 NetworkBuffer.SetNumUninitialized(PendingDataSize);
+                UE_LOG(LogTemp, Log, TEXT("Bytes pending: %d"), PendingDataSize);
                 int32 BytesRead = 0;
                 if (InSocket->Recv(NetworkBuffer.GetData(), NetworkBuffer.Num(), BytesRead))
                 {
+                    UE_LOG(LogTemp, Log, TEXT("Bytes read: %d"), BytesRead);
+
                     if (BytesRead > 0)
                     {
                         NetworkBuffer.SetNum(BytesRead);

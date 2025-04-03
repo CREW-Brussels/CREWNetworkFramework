@@ -353,6 +353,7 @@ bool UCREWNetworkSubsystem::AcceptIncomingConnections(float DeltaTime)
 
 bool UCREWNetworkSubsystem::CheckForIncomingData(float DeltaTime)
 {
+    FScopeLock Lock(&NetworkCriticalSection);
     TArray<FString> DisconnectedPeers;
     for (auto& Elem : ConnectedPeers)
     {
@@ -361,13 +362,13 @@ bool UCREWNetworkSubsystem::CheckForIncomingData(float DeltaTime)
         {
             if (InSocket->GetConnectionState() != SCS_Connected)
             {
+                UE_LOG(LogTemp, Log, TEXT("not connected status from: %s"), *Elem.Key);
                 DisconnectedPeers.Add(Elem.Key);
                 continue; // Skip to the next peer
             }
             uint32 PendingDataSize = 0;
             while (InSocket->HasPendingData(PendingDataSize) && PendingDataSize > 0)
             {
-                FScopeLock Lock(&NetworkCriticalSection);
                 NetworkBuffer.SetNumUninitialized(PendingDataSize);
                 //UE_LOG(LogTemp, Log, TEXT("Bytes pending: %d"), PendingDataSize);
                 int32 BytesRead = 0;
@@ -394,11 +395,13 @@ bool UCREWNetworkSubsystem::CheckForIncomingData(float DeltaTime)
                     }
                 }
                 else {
+                    UE_LOG(LogTemp, Log, TEXT("0 recv from: %s"), *Elem.Key);
                     DisconnectedPeers.Add(Elem.Key);
                 }
             }
         }
         else {
+            UE_LOG(LogTemp, Log, TEXT("nullptr socket from: %s"), *Elem.Key);
             DisconnectedPeers.Add(Elem.Key);
         }
     }

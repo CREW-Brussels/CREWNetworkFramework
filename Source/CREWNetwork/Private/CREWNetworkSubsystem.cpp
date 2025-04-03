@@ -352,11 +352,17 @@ bool UCREWNetworkSubsystem::AcceptIncomingConnections(float DeltaTime)
 
 bool UCREWNetworkSubsystem::CheckForIncomingData(float DeltaTime)
 {
+    TArray<FString> DisconnectedPeers;
     for (auto& Elem : ConnectedPeers)
     {
         FSocket* InSocket = Elem.Value;
         if (InSocket)
         {
+            if (InSocket->GetConnectionState() != SCS_Connected)
+            {
+                DisconnectedPeers.Add(Elem.Key);
+                continue; // Skip to the next peer
+            }
             uint32 PendingDataSize = 0;
             while (InSocket->HasPendingData(PendingDataSize) && PendingDataSize > 0)
             {
@@ -388,6 +394,17 @@ bool UCREWNetworkSubsystem::CheckForIncomingData(float DeltaTime)
                 }
             }
         }
+    }
+    for (const FString& PeerIP : DisconnectedPeers)
+    {
+        FSocket* InSocket = ConnectedPeers[PeerIP];
+        if (InSocket)
+        {
+            InSocket->Close(); // Close the socket
+            ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(InSocket); // Free resources
+        }
+        ConnectedPeers.Remove(PeerIP); // Remove from the map
+        UE_LOG(LogTemp, Log, TEXT("Peer disconnected: %s"), *PeerIP);
     }
     return true;
 }

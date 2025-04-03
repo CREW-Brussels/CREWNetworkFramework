@@ -8,6 +8,7 @@
 #include "Common/UdpSocketBuilder.h"
 #include "Common/UdpSocketReceiver.h"
 #include "Common/UdpSocketSender.h"
+#include "Networking.h"
 #include "Animation/AnimNodeBase.h"
 #include "BoneIndices.h"
 #include "AnimNode_Replicate.h"
@@ -45,5 +46,33 @@ private:
 	FCriticalSection NetworkCriticalSection;
 	TSharedPtr<FInternetAddr> MulticastAddr;
 	TArray<uint8> NetworkBuffer;
+
+
+	FSocket* UDPSocket;
+	FSocket* TCPListenerSocket;
+	TMap<FString, FSocket*> ConnectedPeers;
+
+	/*FTimerHandle BroadcastTimerHandle;
+	FTimerHandle AcceptTimerHandle;
+	FTimerHandle ListenTimerHandle;
+	FTimerHandle CheckDataTimerHandle;*/
+
+	FTSTicker::FDelegateHandle BroadcastTickerHandle;
+	FTSTicker::FDelegateHandle ListenTickerHandle;
+	FTSTicker::FDelegateHandle AcceptTickerHandle;
+	FTSTicker::FDelegateHandle CheckDataTickerHandle;
+
+	const int32 UDPPort = 5000;
+	const int32 TCPPort = 6000;
+	FString LocalIP;
+
+protected:
+	void StopNetworking();
+	void StartNetworking();
+	bool BroadcastPresence(float DeltaTime);
+	bool ListenForBroadcasts(float DeltaTime);
+	void AttemptConnection(const FString& PeerIP, int32 PeerPort);
+	bool AcceptIncomingConnections(float DeltaTime);
+	bool CheckForIncomingData(float DeltaTime);
 };
 

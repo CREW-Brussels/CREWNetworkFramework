@@ -1,5 +1,6 @@
 #include "CREWNetworkSubsystem.h"
-
+#include "SocketSubsystem.h"
+#include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 
 UCREWNetworkSubsystem::UCREWNetworkSubsystem() {
@@ -7,11 +8,24 @@ UCREWNetworkSubsystem::UCREWNetworkSubsystem() {
 	IsServer = false;
 	UDPReceiver = nullptr;
 	bufferPose.SetNumUninitialized(60);
+	UDPSocket = nullptr;
+	TCPListenerSocket = nullptr;
 }
 
 void UCREWNetworkSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
+
+    /*BroadcastTickerHandle = FTSTicker::GetCoreTicker().AddTicker(
+        FTickerDelegate::CreateUObject(this, &UCREWNetworkSubsystem::BroadcastPresence), 1.0f);
+    ListenTickerHandle = FTSTicker::GetCoreTicker().AddTicker(
+        FTickerDelegate::CreateUObject(this, &UCREWNetworkSubsystem::ListenForBroadcasts), 0.1f);
+    AcceptTickerHandle = FTSTicker::GetCoreTicker().AddTicker(
+        FTickerDelegate::CreateUObject(this, &UCREWNetworkSubsystem::AcceptIncomingConnections), 0.1f);
+    CheckDataTickerHandle = FTSTicker::GetCoreTicker().AddTicker(
+        FTickerDelegate::CreateUObject(this, &UCREWNetworkSubsystem::CheckForIncomingData), 0.01f);*/
+    StartNetworking();
+
 	MulticastAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
-	MulticastAddr->SetIp(FIPv4Address(10, 0, 2, 126).Value);
+	MulticastAddr->SetIp(FIPv4Address(255, 255, 255, 255).Value);
 	MulticastAddr->SetPort(16502);
 	Socket = FUdpSocketBuilder(TEXT("UDPBroadcaster"))
 		.AsReusable()
@@ -72,8 +86,17 @@ void UCREWNetworkSubsystem::PushReplicatedPose(FName name, FPoseContext& Pose, f
 		}
 	}
 	NetworkBuffer.Empty();
+    int32 byteSent;
 	tempPose = Pose.Pose.MoveBones();
-	int16 num = tempPose.Num();
+    FMemoryWriter MemoryWriter(NetworkBuffer, true);
+    MemoryWriter << name;
+    double t = PrecisionTime();
+    MemoryWriter << t;
+    TransformArraySerializer::SerializeCompressedTransforms(MemoryWriter, tempPose);
+    for (auto p : ConnectedPeers) {
+        p.Value->Send(NetworkBuffer.GetData(), NetworkBuffer.Num(), byteSent);
+    }
+	/*int16 num = tempPose.Num();
 	int32 byteSent;
 	for (int16 i = 0; i < num; i += 60) {
 		int16 r = num - i;
@@ -93,7 +116,7 @@ void UCREWNetworkSubsystem::PushReplicatedPose(FName name, FPoseContext& Pose, f
 		for (int j = 0; j < 4; j++) {
 			Socket->SendTo(NetworkBuffer.GetData(), NetworkBuffer.Num(), byteSent, *MulticastAddr);
 		}
-	}
+	}*/
 	found->send_index++;
 }
 
@@ -112,6 +135,7 @@ double UCREWNetworkSubsystem::PrecisionTime() {
 }
 
 void UCREWNetworkSubsystem::Deinitialize() {
+    StopNetworking();
 	if (UDPReceiver) {
 		UDPReceiver->Stop();
 		delete UDPReceiver;
@@ -122,4 +146,249 @@ void UCREWNetworkSubsystem::Deinitialize() {
 		ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(Socket);
 		Socket = nullptr;
 	}
+}
+
+
+
+void UCREWNetworkSubsystem::StopNetworking()
+{
+    if (UDPSocket)
+    {
+        UDPSocket->Close();
+        ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(UDPSocket);
+        UDPSocket = nullptr;
+    }
+    if (TCPListenerSocket)
+    {
+        TCPListenerSocket->Close();
+        ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(TCPListenerSocket);
+        TCPListenerSocket = nullptr;
+    }
+    for (auto& Elem : ConnectedPeers)
+    {
+        if (Elem.Value)
+        {
+            Elem.Value->Close();
+            ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(Elem.Value);
+        }
+    }
+    ConnectedPeers.Empty();
+
+   /* GetGameInstance()->GetWorld()->GetTimerManager().ClearTimer(BroadcastTimerHandle);
+    GetGameInstance()->GetWorld()->GetTimerManager().ClearTimer(ListenTimerHandle);
+    GetGameInstance()->GetWorld()->GetTimerManager().ClearTimer(AcceptTimerHandle);
+    GetGameInstance()->GetWorld()->GetTimerManager().ClearTimer(CheckDataTimerHandle);*/
+    FTSTicker::GetCoreTicker().RemoveTicker(BroadcastTickerHandle);
+    FTSTicker::GetCoreTicker().RemoveTicker(ListenTickerHandle);
+    FTSTicker::GetCoreTicker().RemoveTicker(AcceptTickerHandle);
+    FTSTicker::GetCoreTicker().RemoveTicker(CheckDataTickerHandle);
+}
+
+void UCREWNetworkSubsystem::StartNetworking()
+{
+    // Get local IP
+    bool valid;
+    TSharedPtr<FInternetAddr> LocalAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->GetLocalHostAddr(*GLog, valid);
+    if (!LocalAddr.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to get local IP"));
+        return;
+    }
+    LocalIP = LocalAddr->ToString(false);
+
+    // Setup UDP socket
+    UDPSocket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_DGram, TEXT("UDP Broadcast Socket"), true);
+    if (!UDPSocket)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create UDP socket"));
+        return;
+    }
+    UDPSocket->SetBroadcast(true);
+
+    TSharedRef<FInternetAddr> UDPAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
+    FIPv4Address IP(0, 0, 0, 0); // Any address
+    UDPAddr->SetIp(IP.Value);
+    UDPAddr->SetPort(UDPPort);
+    if (!UDPSocket->Bind(*UDPAddr))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to bind UDP socket"));
+        return;
+    }
+
+    // Setup TCP listener
+    TCPListenerSocket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_Stream, TEXT("TCP Listener Socket"), false);
+    if (!TCPListenerSocket)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create TCP listener socket"));
+        return;
+    }
+    TSharedRef<FInternetAddr> TCPAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
+    TCPAddr->SetIp(IP.Value);
+    TCPAddr->SetPort(TCPPort);
+    if (!TCPListenerSocket->Bind(*TCPAddr) || !TCPListenerSocket->Listen(8))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to setup TCP listener"));
+        return;
+    }
+
+    BroadcastTickerHandle = FTSTicker::GetCoreTicker().AddTicker(
+        FTickerDelegate::CreateUObject(this, &UCREWNetworkSubsystem::BroadcastPresence), 1.0f);
+    ListenTickerHandle = FTSTicker::GetCoreTicker().AddTicker(
+        FTickerDelegate::CreateUObject(this, &UCREWNetworkSubsystem::ListenForBroadcasts), 0.1f);
+    AcceptTickerHandle = FTSTicker::GetCoreTicker().AddTicker(
+        FTickerDelegate::CreateUObject(this, &UCREWNetworkSubsystem::AcceptIncomingConnections), 0.1f);
+    CheckDataTickerHandle = FTSTicker::GetCoreTicker().AddTicker(
+        FTickerDelegate::CreateUObject(this, &UCREWNetworkSubsystem::CheckForIncomingData), 0.01f);
+
+    UE_LOG(LogTemp, Log, TEXT("Peer started: IP=%s, UDP=%d, TCP=%d"), *LocalIP, UDPPort, TCPPort);
+}
+
+bool UCREWNetworkSubsystem::BroadcastPresence(float DeltaTime)
+{
+    if (!UDPSocket)
+        return true;
+
+    FString Message = FString::Printf(TEXT("PEER_IP:%s:TCP_PORT:%d"), *LocalIP, TCPPort);
+    TArray<uint8> Data;
+    Data.Append((uint8*)TCHAR_TO_ANSI(*Message), Message.Len());
+
+    TSharedRef<FInternetAddr> BroadcastAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
+    BroadcastAddr->SetIp(FIPv4Address(255, 255, 255, 255).Value);//SetBroadcastAddress();
+    BroadcastAddr->SetPort(UDPPort);
+
+    int32 BytesSent = 0;
+    UDPSocket->SendTo(Data.GetData(), Data.Num(), BytesSent, *BroadcastAddr);
+    return true;
+}
+
+bool UCREWNetworkSubsystem::ListenForBroadcasts(float DeltaTime)
+{
+    if (!UDPSocket)
+        return true;
+
+    TArray<uint8> Data;
+    Data.SetNum(1024);
+    TSharedRef<FInternetAddr> RemoteAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
+    int32 BytesRead = 0;
+
+    uint32 PendingDataSize = 0;
+    while (UDPSocket->HasPendingData(PendingDataSize) && PendingDataSize > 0) {
+        if (UDPSocket->RecvFrom(Data.GetData(), Data.Num(), BytesRead, *RemoteAddr) && BytesRead > 0)
+        {
+            Data.SetNum(BytesRead);
+            FString Message = FString::FromBlob(Data.GetData(), BytesRead);
+            if (Message.StartsWith(TEXT("PEER_IP:")))
+            {
+                TArray<FString> Parts;
+                Message.ParseIntoArray(Parts, TEXT(":"), true);
+                if (Parts.Num() >= 4)
+                {
+                    FString PeerIP = Parts[1];
+                    int32 PeerPort = FCString::Atoi(*Parts[3]);
+                    if (PeerIP != LocalIP && LocalIP < PeerIP) // Connect only if "lower" IP
+                    {
+                        AttemptConnection(PeerIP, PeerPort);
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+void UCREWNetworkSubsystem::AttemptConnection(const FString& PeerIP, int32 PeerPort)
+{
+    if (ConnectedPeers.Contains(PeerIP))
+        return;
+
+    FSocket* ClientTCPSocket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_Stream, TEXT("TCP Client Socket"), false);
+    if (!ClientTCPSocket)
+        return;
+
+    TSharedRef<FInternetAddr> Addr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
+    bool valid;
+    Addr->SetIp(*PeerIP, valid);
+    Addr->SetPort(PeerPort);
+
+    if (valid && ClientTCPSocket->Connect(*Addr))
+    {
+        FScopeLock Lock(&NetworkCriticalSection);
+        ConnectedPeers.Add(PeerIP, ClientTCPSocket);
+        UE_LOG(LogTemp, Log, TEXT("Connected to peer: %s:%d"), *PeerIP, PeerPort);
+    }
+    else
+    {
+        ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(ClientTCPSocket);
+    }
+}
+
+bool UCREWNetworkSubsystem::AcceptIncomingConnections(float DeltaTime)
+{
+    if (!TCPListenerSocket)
+        return true;
+
+    bool bHasPending;
+    if (TCPListenerSocket->HasPendingConnection(bHasPending) && bHasPending)
+    {
+        FSocket* IncomingSocket = TCPListenerSocket->Accept(TEXT("Incoming Peer"));
+        if (IncomingSocket)
+        {
+            TSharedPtr<FInternetAddr> PeerAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
+            IncomingSocket->GetPeerAddress(*PeerAddr);
+            FString PeerIP = PeerAddr->ToString(false);
+
+            if (PeerIP != LocalIP && !ConnectedPeers.Contains(PeerIP))
+            {
+                FScopeLock Lock(&NetworkCriticalSection);
+                ConnectedPeers.Add(PeerIP, IncomingSocket);
+                UE_LOG(LogTemp, Log, TEXT("Accepted peer: %s"), *PeerIP);
+            }
+            else
+            {
+                IncomingSocket->Close();
+                ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(IncomingSocket);
+            }
+        }
+    }
+    return true;
+}
+
+
+bool UCREWNetworkSubsystem::CheckForIncomingData(float DeltaTime)
+{
+    for (auto& Elem : ConnectedPeers)
+    {
+        FSocket* InSocket = Elem.Value;
+        if (InSocket)
+        {
+            uint32 PendingDataSize = 0;
+            while (InSocket->HasPendingData(PendingDataSize) && PendingDataSize > 0)
+            {
+                FScopeLock Lock(&NetworkCriticalSection);
+                NetworkBuffer.SetNumUninitialized(PendingDataSize);
+                int32 BytesRead = 0;
+                if (InSocket->Recv(NetworkBuffer.GetData(), NetworkBuffer.Num(), BytesRead))
+                {
+                    if (BytesRead > 0)
+                    {
+                        NetworkBuffer.SetNum(BytesRead);
+                        FMemoryReader MemoryReader(NetworkBuffer);
+                        FName name;
+                        double t;
+                        MemoryReader << name;
+                        MemoryReader << t;
+                        TransformArraySerializer::DeserializeCompressedTransforms(MemoryReader, tempPose);
+
+                        FReplicatedPosePlayHead* found = NamedPoseStreams.Find(name);
+
+                        if (found == nullptr) {
+                            found = &NamedPoseStreams.Add(name, FReplicatedPosePlayHead());
+                        }
+                        found->AddFrame(tempPose, t);
+                    }
+                }
+            }
+        }
+    }
+    return true;
 }

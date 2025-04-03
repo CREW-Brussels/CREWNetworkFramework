@@ -298,6 +298,7 @@ void UCREWNetworkSubsystem::AttemptConnection(const FString& PeerIP, int32 PeerP
         return;
 
     FSocket* ClientTCPSocket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_Stream, TEXT("TCP Client Socket"), false);
+
     if (!ClientTCPSocket)
         return;
 
@@ -391,6 +392,9 @@ bool UCREWNetworkSubsystem::CheckForIncomingData(float DeltaTime)
                         }
                         found->AddFrame(tempPose, t);
                     }
+                }
+                else {
+                    DisconnectedPeers.Add(Elem.Key);
                 }
             }
         }

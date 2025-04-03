@@ -11,7 +11,7 @@ UCREWNetworkSubsystem::UCREWNetworkSubsystem() {
 
 void UCREWNetworkSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
 	MulticastAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
-	MulticastAddr->SetIp(FIPv4Address(255, 255, 255, 255).Value);
+	MulticastAddr->SetIp(FIPv4Address(10, 0, 2, 126).Value);
 	MulticastAddr->SetPort(16502);
 	Socket = FUdpSocketBuilder(TEXT("UDPBroadcaster"))
 		.AsReusable()

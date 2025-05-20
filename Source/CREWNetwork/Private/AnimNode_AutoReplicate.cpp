@@ -1,13 +1,13 @@
-#include "AnimNode_Replicate.h"
+#include "AnimNode_AutoReplicate.h"
 #include "AnimationRuntime.h"
 #include "Animation/AnimInstanceProxy.h"
 #include "CREWNetworkSubsystem.h"
 
-FAnimNode_Replicate::FAnimNode_Replicate() : network(nullptr) {
+FAnimNode_AutoReplicate::FAnimNode_AutoReplicate() : network(nullptr) {
 
 }
 
-void FAnimNode_Replicate::Initialize_AnyThread(const FAnimationInitializeContext& Context)
+void FAnimNode_AutoReplicate::Initialize_AnyThread(const FAnimationInitializeContext& Context)
 {
     network = nullptr;
     if (Context.AnimInstanceProxy)
@@ -17,14 +17,19 @@ void FAnimNode_Replicate::Initialize_AnyThread(const FAnimationInitializeContext
             AActor *Owner = AnimInstance->GetOwningComponent()->GetOwner();
             if (Owner && IsValid(Owner->GetGameInstance()))
             {
-                network = GEngine->GetEngineSubsystem<UCREWNetworkSubsystem>();//Owner->GetGameInstance()->GetSubsystem<UCREWNetworkSubsystem>();
+                APawn* pawn = Cast<APawn>(Owner);
+                if (pawn != nullptr) {
+                    network = GEngine->GetEngineSubsystem<UCREWNetworkSubsystem>();//Owner->GetGameInstance()->GetSubsystem<UCREWNetworkSubsystem>();
+                    Streaming = pawn->IsLocallyControlled();
+                    StreamName = pawn->GetFName();
+                }
             }
         }
     }
 
 }
 
-void FAnimNode_Replicate::Evaluate_AnyThread(FPoseContext& Output)
+void FAnimNode_AutoReplicate::Evaluate_AnyThread(FPoseContext& Output)
 {
     if (network != nullptr) {
         if (Streaming) {

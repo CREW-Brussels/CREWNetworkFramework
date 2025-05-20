@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
+using EpicGames.Core;
 
 public class CREWNetwork : ModuleRules
 {
@@ -30,7 +31,8 @@ public class CREWNetwork : ModuleRules
 				"Engine",
 				"AnimGraphRuntime",
                 "Sockets",
-                "Networking"
+                "Networking",
+				"GameplayTags",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -57,12 +59,10 @@ public class CREWNetwork : ModuleRules
 			}
 			);
 
-       /* if (Target.bBuildEditor)
+		bool using_live_link = false;
+        
+        if (JsonObject.TryRead(Target.ProjectFile, out var rawObject))
         {
-<<<<<<< Updated upstream
-            PrivateDependencyModuleNames.Add("UnrealEd"); // Editor-only modules
-        }*/
-=======
             if (rawObject.TryGetObjectArrayField("Plugins", out var pluginObjects))
             {
                 foreach (JsonObject pluginObject in pluginObjects)
@@ -102,6 +102,5 @@ public class CREWNetwork : ModuleRules
          {
              PrivateDependencyModuleNames.Add("UnrealEd"); // Editor-only modules
          }*/
->>>>>>> Stashed changes
     }
 }

@@ -12,12 +12,12 @@
 #include "Animation/AnimNodeBase.h"
 #include "BoneIndices.h"
 #include "AnimNode_Replicate.h"
+#include "AnimNode_AutoReplicate.h"
 #include "ReplicatedPosePlayHead.h"
+#include "Command.h"
 
 #include "CREWNetworkSubsystem.generated.h"
 
-<<<<<<< Updated upstream
-=======
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNetworkCommandEvent, FGameplayTag, Command);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNetworkCommandWithBoolEvent, FGameplayTag, Command, bool, Value);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNetworkCommandWithIntEvent, FGameplayTag, Command, int, Value);
@@ -34,12 +34,8 @@ enum class ECREWNetworkType : uint8 {
 	Ack
 };
 
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 UCLASS()
-class CREWNETWORK_API UCREWNetworkSubsystem : public UGameInstanceSubsystem//UEngineSubsystem
+class CREWNETWORK_API UCREWNetworkSubsystem : public UEngineSubsystem//UGameInstanceSubsystem//UGameInstanceSubsystem//UEngineSubsystem
 {
 	GENERATED_BODY()
 
@@ -49,8 +45,6 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
-<<<<<<< Updated upstream
-=======
 	UFUNCTION(BlueprintCallable)
 	void SetSkeletonForStream(USkeletalMesh *skeleton, FName stream);
 
@@ -90,14 +84,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Network Command")
 	void SendCommandWithString(FGameplayTag command, FString value);
 
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 private:
 	friend FAnimNode_Replicate;
+	friend FAnimNode_AutoReplicate;
+	bool BroadcastPresence(float DeltaTime);
+
 	void PushReplicatedPose(FName name, FPoseContext& Pose, float fps);
 	bool GetReplicatedPose(FName name, FPoseContext& Pose);
+
+	void SendRemainingCommands();
 
 	static inline double PrecisionTime();
 
@@ -105,38 +100,19 @@ private:
 	
 	UPROPERTY()
 	TMap<FName, FReplicatedPosePlayHead> NamedPoseStreams;
+
 	TArray<FTransform> tempPose;
 	TArray<FTransform> bufferPose;
 
-<<<<<<< Updated upstream
-	FSocket* Socket;
-	FUdpSocketReceiver* UDPReceiver;
-	bool IsServer;
-=======
 	FSocket* BroadcastSocket;
 	FUdpSocketReceiver* BroadcastReceiver;
 	FThreadSafeBool keepBroadcastTimer;
 	TFuture<void> broadcastThread;
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
 	FCriticalSection NetworkCriticalSection;
 	TSharedPtr<FInternetAddr> MulticastAddr;
 	TArray<uint8> NetworkBuffer;
 
-<<<<<<< Updated upstream
-
-	FSocket* UDPSocket;
-	FSocket* TCPListenerSocket;
-	TMap<FString, FSocket*> ConnectedPeers;
-
-	/*FTimerHandle BroadcastTimerHandle;
-	FTimerHandle AcceptTimerHandle;
-	FTimerHandle ListenTimerHandle;
-	FTimerHandle CheckDataTimerHandle;*/
-=======
 	FSocket* UdpSocket;
 	FUdpSocketReceiver* UdpReceiver;
 	
@@ -148,30 +124,10 @@ private:
 	TArray<uint8> commandBuffer;
 	FThreadSafeBool keepRunningCommand;
 	TFuture<void> commandThread;
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
+	TSharedPtr<FInternetAddr> localBroadcastAddr;
+	TSharedPtr<FInternetAddr> localCommAddr;
 	FTSTicker::FDelegateHandle BroadcastTickerHandle;
-<<<<<<< Updated upstream
-	FTSTicker::FDelegateHandle ListenTickerHandle;
-	FTSTicker::FDelegateHandle AcceptTickerHandle;
-	FTSTicker::FDelegateHandle CheckDataTickerHandle;
-
-	const int32 UDPPort = 5000;
-	const int32 TCPPort = 6000;
-	FString LocalIP;
-
-protected:
-	void StopNetworking();
-	void StartNetworking();
-	bool BroadcastPresence(float DeltaTime);
-	bool ListenForBroadcasts(float DeltaTime);
-	void AttemptConnection(const FString& PeerIP, int32 PeerPort);
-	bool AcceptIncomingConnections(float DeltaTime);
-	bool CheckForIncomingData(float DeltaTime);
-=======
 	bool clearingCommands;
 
 	//FName ProjectName;
@@ -184,9 +140,5 @@ protected:
 	int communicationPort;
 	FName configAppName;
 	bool bEnableAutoConnect;
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 };
 

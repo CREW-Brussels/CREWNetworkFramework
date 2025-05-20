@@ -6,6 +6,7 @@
 #include "Animation/AnimNodeBase.h"
 #include "BoneIndices.h"
 #include "AnimNode_Replicate.h"
+#include "CustomLiveLinkSource.h"
 
 #include "ReplicatedPosePlayHead.generated.h"
 
@@ -34,18 +35,15 @@ public:
 		fragments_index = -1;
 		send_index = 0;
 		source = nullptr;
-<<<<<<< Updated upstream
-=======
 	}
 	void Init(FName name) {
 #if WITH_LIVE_LINK
 		source = NewObject<UCustomLiveLinkSource>();
 		source->Initialize(name);
 #endif
->>>>>>> Stashed changes
 	}
 	void AddFragment(TArray<FTransform>& in, int16 total, int16 offset, int32 index, double t) {
-		if (fragments_index < index || index < (fragments_index-10)) {
+		if (fragments_index < index || index < (fragments_index-100)) {
 			received = 0;
 			fragments.SetNumUninitialized(total);
 			fragments_received = 0;
@@ -64,6 +62,9 @@ public:
 		}
 	}
 	void AddFrame(TArray<FTransform>& in, double t) {
+#if WITH_LIVE_LINK
+		source->PushSkeletalFrame(in);
+#endif
 		if (boneCount == 0) {
 			if (head == 1) {
 				time = t;
@@ -112,6 +113,7 @@ public:
 			return InterpolatePose(f3.pose, f4.pose, (time - f3.time) / (f4.time - f3.time), Output);
 		}
 	}
+
 	bool InterpolatePose(TArray<FTransform> &a, TArray<FTransform> &b, const float Alpha, FPoseContext &Output) {
 		int32 count = Output.Pose.GetNumBones();
 		if (a.Num() != count || b.Num() != count || boneCount != count) {
@@ -136,6 +138,9 @@ public:
 	int32 fragments_index;
 	int16 received;
 	int32 send_index;
+	UPROPERTY()
+	UCustomLiveLinkSource* source;
+
 };
 
 class TransformArraySerializer {
@@ -185,18 +190,18 @@ public:
 		FVector s;
 
 		for (int i = 0; i < Transforms.Num(); i++) {
-			r.X = double(compressed[i * 10 + 0]) / 32767.0f;
-			r.Y = double(compressed[i * 10 + 1]) / 32767.0f;
-			r.Z = double(compressed[i * 10 + 2]) / 32767.0f;
-			r.W = double(compressed[i * 10 + 3]) / 32767.0f;
+			r.X = double(compressed[i * 10 + 0]) / 32767.0;
+			r.Y = double(compressed[i * 10 + 1]) / 32767.0;
+			r.Z = double(compressed[i * 10 + 2]) / 32767.0;
+			r.W = double(compressed[i * 10 + 3]) / 32767.0;
 
-			l.X = double(compressed[i * 10 + 4]) / 10.0f;
-			l.Y = double(compressed[i * 10 + 5]) / 10.0f;
-			l.Z = double(compressed[i * 10 + 6]) / 10.0f;
+			l.X = double(compressed[i * 10 + 4]) / 10.0;
+			l.Y = double(compressed[i * 10 + 5]) / 10.0;
+			l.Z = double(compressed[i * 10 + 6]) / 10.0;
 
-			s.X = double(compressed[i * 10 + 7]) / 1000.0f;
-			s.Y = double(compressed[i * 10 + 8]) / 1000.0f;
-			s.Z = double(compressed[i * 10 + 9]) / 1000.0f;
+			s.X = double(compressed[i * 10 + 7]) / 1000.0;
+			s.Y = double(compressed[i * 10 + 8]) / 1000.0;
+			s.Z = double(compressed[i * 10 + 9]) / 1000.0;
 
 			Transforms[i].SetComponents(r, l, s);
 			Transforms[i].NormalizeRotation();

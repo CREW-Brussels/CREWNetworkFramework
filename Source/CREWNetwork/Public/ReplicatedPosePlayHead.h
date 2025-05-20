@@ -34,6 +34,15 @@ public:
 		fragments_index = -1;
 		send_index = 0;
 		source = nullptr;
+<<<<<<< Updated upstream
+=======
+	}
+	void Init(FName name) {
+#if WITH_LIVE_LINK
+		source = NewObject<UCustomLiveLinkSource>();
+		source->Initialize(name);
+#endif
+>>>>>>> Stashed changes
 	}
 	void AddFragment(TArray<FTransform>& in, int16 total, int16 offset, int32 index, double t) {
 		if (fragments_index < index || index < (fragments_index-10)) {

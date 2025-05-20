@@ -34,6 +34,9 @@ enum class ECREWNetworkType : uint8 {
 	Ack
 };
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 UCLASS()
 class CREWNETWORK_API UCREWNetworkSubsystem : public UGameInstanceSubsystem//UEngineSubsystem
@@ -87,6 +90,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Network Command")
 	void SendCommandWithString(FGameplayTag command, FString value);
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 private:
 	friend FAnimNode_Replicate;
@@ -111,6 +117,9 @@ private:
 	FUdpSocketReceiver* BroadcastReceiver;
 	FThreadSafeBool keepBroadcastTimer;
 	TFuture<void> broadcastThread;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 	FCriticalSection NetworkCriticalSection;
@@ -139,6 +148,9 @@ private:
 	TArray<uint8> commandBuffer;
 	FThreadSafeBool keepRunningCommand;
 	TFuture<void> commandThread;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 	FTSTicker::FDelegateHandle BroadcastTickerHandle;
@@ -172,6 +184,9 @@ protected:
 	int communicationPort;
 	FName configAppName;
 	bool bEnableAutoConnect;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 };
 

@@ -3,6 +3,10 @@
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+#include "CREWNetworkSettings.h"
+>>>>>>> Stashed changes
 =======
 #include "CREWNetworkSettings.h"
 >>>>>>> Stashed changes
@@ -12,6 +16,7 @@ UCREWNetworkSubsystem::UCREWNetworkSubsystem() {
 	IsServer = false;
 	UDPReceiver = nullptr;
 	bufferPose.SetNumUninitialized(60);
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 	UDPSocket = nullptr;
 	TCPListenerSocket = nullptr;
@@ -38,6 +43,8 @@ void UCREWNetworkSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
 		.WithBroadcast()
 		.BoundToEndpoint(FIPv4Endpoint(FIPv4Address::Any, 16502))
 =======
+=======
+>>>>>>> Stashed changes
 	connectionInt = 0;
 }
 
@@ -76,6 +83,9 @@ void UCREWNetworkSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
 		.AsNonBlocking()
 		.WithBroadcast()
 		.BoundToEndpoint(FIPv4Endpoint(FIPv4Address::Any, broadcastPort))
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 		.WithSendBufferSize(0);
 
@@ -462,6 +472,10 @@ void UCREWNetworkSubsystem::PushReplicatedPose(FName name, FPoseContext& Pose, f
 	/*int16 num = tempPose.Num();
 	int32 byteSent;
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+	ECREWNetworkType type = ECREWNetworkType::Pose;
+>>>>>>> Stashed changes
 =======
 	ECREWNetworkType type = ECREWNetworkType::Pose;
 >>>>>>> Stashed changes
@@ -510,6 +524,7 @@ double UCREWNetworkSubsystem::PrecisionTime() {
 
 void UCREWNetworkSubsystem::Deinitialize() {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     StopNetworking();
 	if (UDPReceiver) {
 		UDPReceiver->Stop();
@@ -555,9 +570,44 @@ void UCREWNetworkSubsystem::Deinitialize() {
 		broadcastThread.Wait();
 	}
 >>>>>>> Stashed changes
+=======
+	{
+		FScopeLock Lock(&NetworkCriticalSection);
+		FTSTicker::GetCoreTicker().RemoveTicker(BroadcastTickerHandle);
+		if (UdpReceiver) {
+			UdpReceiver->Stop();
+			delete UdpReceiver;
+			UdpReceiver = nullptr;
+		}
+		if (UdpSocket) {
+			UdpSocket->Close();
+			ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(UdpSocket);
+			UdpSocket = nullptr;
+		}
+		if (BroadcastReceiver) {
+			BroadcastReceiver->Stop();
+			delete BroadcastReceiver;
+			BroadcastReceiver = nullptr;
+		}
+		if (BroadcastSocket) {
+			BroadcastSocket->Close();
+			ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(BroadcastSocket);
+			BroadcastSocket = nullptr;
+		}
+		keepRunningCommand = false;
+		keepBroadcastTimer = false;
+	}
+	if (commandThread.IsValid()) {
+		commandThread.Wait();
+	}
+	if (broadcastThread.IsValid()) {
+		broadcastThread.Wait();
+	}
+>>>>>>> Stashed changes
 }
 
 
+<<<<<<< Updated upstream
 
 void UCREWNetworkSubsystem::StopNetworking()
 {
@@ -594,6 +644,8 @@ void UCREWNetworkSubsystem::StopNetworking()
     FTSTicker::GetCoreTicker().RemoveTicker(AcceptTickerHandle);
     FTSTicker::GetCoreTicker().RemoveTicker(CheckDataTickerHandle);
 =======
+=======
+>>>>>>> Stashed changes
 	if (found != nullptr && found->source != nullptr) {
 		found->source->UpdateStaticData(skeleton);
 	}
@@ -617,6 +669,9 @@ void UCREWNetworkSubsystem::StartNetworking()
 	//Need to be called from a scoped lock
 	int32 byteSent;
 	ECREWNetworkType type = ECREWNetworkType::Command;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
     // Setup UDP socket
@@ -846,6 +901,25 @@ bool UCREWNetworkSubsystem::CheckForIncomingData(float DeltaTime)
 		}
 	}
 >>>>>>> Stashed changes
+}
+
+void UCREWNetworkSubsystem::ExecOnGameThread(const FString& command) {
+	AsyncTask(ENamedThreads::GameThread, [command]()
+	{
+		UWorld* target = nullptr;
+		for (const FWorldContext& context : GEngine->GetWorldContexts()) {
+			if (context.WorldType == EWorldType::Game || context.WorldType == EWorldType::PIE) {
+				target = context.World();
+				break;
+			}
+		}
+		if (target != nullptr) {
+			APlayerController* controller = target->GetFirstPlayerController();
+			if (controller != nullptr) {
+				controller->ConsoleCommand(command, true);
+			}
+		}
+	});
 }
 
 void UCREWNetworkSubsystem::ExecOnGameThread(const FString& command) {

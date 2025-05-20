@@ -1,18 +1,36 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "CREWNetwork.h"
+#include "ISettingsModule.h"
+#include "ISettingsSection.h"
+#include "CREWNetworkSettings.h"
 
 #define LOCTEXT_NAMESPACE "FCREWNetworkModule"
 
 void FCREWNetworkModule::StartupModule()
 {
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FCREWNetworkModule::RegisterSettings);
+}
+
+void FCREWNetworkModule::RegisterSettings()
+{
+	if (ISettingsModule* settings = FModuleManager::GetModulePtr<ISettingsModule>("Settings")) {
+		settings->RegisterSettings(
+			"Project",
+			"Plugins",
+			"CREWNetwork",
+			LOCTEXT("CREWNetworkName", "CREW Network"),
+			LOCTEXT("CREWNetworkDesc", "CREW Network framework, auto discorver compatible instance of the project on the same network, auto connect them, and allow easy pose replication and simple messaging betwwen them."),
+			GetMutableDefault<UCREWNetworkSettings>()
+		);
+	}
 }
 
 void FCREWNetworkModule::ShutdownModule()
 {
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
+	if (ISettingsModule* settings = FModuleManager::GetModulePtr<ISettingsModule>("Settings")) {
+		settings->UnregisterSettings("Project", "Plugins", "CREWNetwork");
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

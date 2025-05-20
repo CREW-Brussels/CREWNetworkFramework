@@ -3,20 +3,20 @@
 	"Version": 1,
 	"VersionName": "1.0",
 	"FriendlyName": "CREW Network Framework",
-	"Description": "Replication Framework for server side trigger/action over 3 contexts",
+	"Description": "The CREW Network Framework provides a subsystem that manage client server auto connection and server-less data transfer between all discovered instance of the same project.",
 	"Category": "Other",
 	"CreatedBy": "CREW",
 	"CreatedByURL": "http://crew.brussels",
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
-	"CanContainContent": true,
+	"CanContainContent": false,
 	"Installed": true,
 	"Modules": [
 		{
 			"Name": "CREWNetwork",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PostConfigInit"
 		},
 		{
 			"Name": "CREWNetworkEditor",

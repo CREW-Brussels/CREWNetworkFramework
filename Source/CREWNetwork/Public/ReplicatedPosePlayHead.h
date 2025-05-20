@@ -33,6 +33,7 @@ public:
 		fragments_received = 0;
 		fragments_index = -1;
 		send_index = 0;
+		source = nullptr;
 	}
 	void AddFragment(TArray<FTransform>& in, int16 total, int16 offset, int32 index, double t) {
 		if (fragments_index < index || index < (fragments_index-10)) {

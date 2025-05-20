@@ -43,7 +43,8 @@ public class CREWNetwork : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-                "AnimationCore"
+                "AnimationCore",
+				"Settings"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -58,7 +59,49 @@ public class CREWNetwork : ModuleRules
 
        /* if (Target.bBuildEditor)
         {
+<<<<<<< Updated upstream
             PrivateDependencyModuleNames.Add("UnrealEd"); // Editor-only modules
         }*/
+=======
+            if (rawObject.TryGetObjectArrayField("Plugins", out var pluginObjects))
+            {
+                foreach (JsonObject pluginObject in pluginObjects)
+                {
+                    pluginObject.TryGetStringField("Name", out var pluginName);
+
+                    pluginObject.TryGetBoolField("Enabled", out var pluginEnabled);
+
+                    if (pluginName == "LiveLink" && pluginEnabled)
+                    {
+						using_live_link = true;
+                    }
+                }
+            }
+        }
+		if (using_live_link)
+		{
+            PublicDefinitions.Add("WITH_LIVE_LINK=1");
+			PrivateDefinitions.Add("WITH_LIVE_LINK=1");
+            PublicDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "LiveLink",
+                "LiveLinkInterface",
+                "LiveLinkMessageBusFramework"
+			}
+            );
+            System.Console.WriteLine("Live link plugin is enabled");
+        }
+		else
+		{
+            PublicDefinitions.Add("WITH_LIVE_LINK=0");
+            PrivateDefinitions.Add("WITH_LIVE_LINK=0");
+            System.Console.WriteLine("Live link plugin is disabled");
+        }
+        /* if (Target.bBuildEditor)
+         {
+             PrivateDependencyModuleNames.Add("UnrealEd"); // Editor-only modules
+         }*/
+>>>>>>> Stashed changes
     }
 }

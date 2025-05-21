@@ -38,3 +38,11 @@ void FAnimNode_Replicate::Evaluate_AnyThread(FPoseContext& Output)
         }
     }
 }
+
+void FAnimNode_Replicate::CacheBones_AnyThread(const FAnimationCacheBonesContext& Context) {
+    BasePose.CacheBones(Context);
+}
+
+void FAnimNode_Replicate::Update_AnyThread(const FAnimationUpdateContext& Context) {
+    BasePose.Update(Context);
+}

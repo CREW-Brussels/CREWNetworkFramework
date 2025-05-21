@@ -21,6 +21,8 @@ public:
 
     virtual void Initialize_AnyThread(const FAnimationInitializeContext& Context) override;
     virtual void Evaluate_AnyThread(FPoseContext& Output) override;
+    virtual void CacheBones_AnyThread(const FAnimationCacheBonesContext& Context) override;
+    virtual void Update_AnyThread(const FAnimationUpdateContext& Context) override;
 private:
     UPROPERTY()
     class UCREWNetworkSubsystem *network;

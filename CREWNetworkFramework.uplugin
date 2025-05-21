@@ -4,7 +4,7 @@
 	"VersionName": "1.0",
 	"FriendlyName": "CREW Network Framework",
 	"Description": "The CREW Network Framework provides a subsystem that manage client server auto connection and server-less data transfer between all discovered instance of the same project.",
-	"Category": "Other",
+	"Category": "CREW",
 	"CreatedBy": "CREW",
 	"CreatedByURL": "http://crew.brussels",
 	"DocsURL": "",

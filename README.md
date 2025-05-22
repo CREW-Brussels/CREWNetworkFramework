@@ -43,7 +43,13 @@ Directly with an Animation Blueprint, the *Replicate Pose* node allows live repl
 2. Chose a strean name, here we chose "performer" but it could be anything else.
 3. Chose your fps, 10 or 20 is good
 4. Tick streaming
-5. Create a new Blueprint Actor -> Add a new component -> Skeleton mesh component -> Add the ABP you've previously created in the Animation details, and add the mesh. In details > optimisation, make sure the Visibility Based Anim Tick Option is on *Always Tick Pose and Refresh Bones*. This will allow the animation data to be sent, even if the editor, om play mode, is not targeted to the animation or if it's hidden in game.
+5. Create a new Blueprint Actor:
+- Add a new component -> Skeleton mesh component
+- Add the ABP you've previously created in the Animation details, and add the mesh.
+- In details > optimisation, make sure the Visibility Based Anim Tick Option is on *Always Tick Pose and Refresh Bones*. This will allow the animation data to be sent, even if the editor, om play mode, is not targeted to the animation or if it's hidden in game.
+- In the event graph, create the following nodes. This will allow the actor to not be destroyed on start if the computer is the server (CA JE SUIS PLUS TROP SURE)  ![Screenshot 2025-05-22 164853](https://github.com/user-attachments/assets/e0693b21-ddd5-4612-9124-917f6e3366e0)
+
+- This Blueprint will send the animation once put in a scene.
 
 ![Screenshot 2025-05-22 165456](https://github.com/user-attachments/assets/6512018e-0cfa-47fd-8bb9-535e0009f5ce)
 
@@ -60,7 +66,22 @@ Directly with an Animation Blueprint, the *Replicate Pose* node allows live repl
 
 ![Screenshot 2025-05-21 170001](https://github.com/user-attachments/assets/4b70a71d-0fa9-4941-b1af-ac3e595b3518)
 
-4. Create a new Blueprint Actor -> Add a new component -> Skeleton mesh component -> Add the ABP you've just created in the Animation details, and add the mesh. This Blueprint will receive the animation.
+4. Create a new Blueprint Actor:
+- Add a new component -> Skeleton mesh component
+- Add the ABP you've just created in the Animation details, and add the mesh.
+- This Blueprint will receive the animation.
 5. Drag and drop it in your scene to have a skeleton mesh ready to receive the broadcasted animation!
 
 ***
+## Use case #2: Multicast a list of commands
+With the command system of this plugin, any client can send a command that will be visible to any client on the same application name. To do that, you will use one of the nodes "send command
+***
+For example, if you want to share inputs from the controller of a client, you can send the command over the network. It can be any type of variable. In the player's BP event graph, you will send commands from different input actions.
+
+![Screenshot 2025-05-21 170535](https://github.com/user-attachments/assets/71ecf888-808f-4649-87a2-395da6d430c4)
+![Screenshot 2025-05-21 170440](https://github.com/user-attachments/assets/64bc7a94-2e4f-4990-b7ee-b203ddd8afd3)
+![Screenshot 2025-05-21 170428](https://github.com/user-attachments/assets/9ea654b3-fe48-49d2-a376-0ce272a29101)
+![Screenshot 2025-05-21 170420](https://github.com/user-attachments/assets/bed2971c-8d21-49cb-a884-c184630a7c96)
+
+EXPLIQUER GAMEPLAY TAGS
+

@@ -34,7 +34,7 @@ Directly with an Animation Blueprint, the *Replicate Pose* node allows live repl
 
 ### Animation Blueprint for the sender
 
-1. Create an Animation Blueprint with your animation sequence or a live animation. Here, we called it *ABP_Broadcaster*
+1. Create an Animation Blueprint with your animation sequence or a live animation, and the node called *Replicate Pose*. Here, we called it *ABP_Rebroadcaster*
 
 ![Screenshot 2025-05-21 165734](https://github.com/user-attachments/assets/72b67a74-fd97-412b-8324-67e47578508b)
 
@@ -43,10 +43,24 @@ Directly with an Animation Blueprint, the *Replicate Pose* node allows live repl
 2. Chose a strean name, here we chose "performer" but it could be anything else.
 3. Chose your fps, 10 or 20 is good
 4. Tick streaming
-5. Create a new Blueprint Actor -> Add a new component -> Skeleton mesh component -> Add the ABP you've previously created in the Animation details, and the mesh. In details > optimisation, make sure the Visibility Based Anim Tick Option is on *Always Tick Pose and Refresh Bones*. This will allow the animation data to be sent, even if the editor, om play mode, is not targeted to the animation or if it's hidden in game.
+5. Create a new Blueprint Actor -> Add a new component -> Skeleton mesh component -> Add the ABP you've previously created in the Animation details, and add the mesh. In details > optimisation, make sure the Visibility Based Anim Tick Option is on *Always Tick Pose and Refresh Bones*. This will allow the animation data to be sent, even if the editor, om play mode, is not targeted to the animation or if it's hidden in game.
 
 ![Screenshot 2025-05-22 165456](https://github.com/user-attachments/assets/6512018e-0cfa-47fd-8bb9-535e0009f5ce)
 
 ![Screenshot 2025-05-22 165515](https://github.com/user-attachments/assets/e3f30596-5efd-45af-a126-ad7d1806baa8)
 
-6. Your animation is ready to be broadcasted over multiple UE applications!
+6. Your animation is ready to be broadcasted over multiple UE applications! Drag and drop the BP you've just created in your scene to broadcast your animation.
+
+
+
+### Animation Blueprint for the receiver
+
+1. Create a new Animation Blueprint. Add the node *Replicate Pose*
+2. On this node, type in the same stream name as the sender and make sure **Streaming is NOT ticked**
+
+![Screenshot 2025-05-21 170001](https://github.com/user-attachments/assets/4b70a71d-0fa9-4941-b1af-ac3e595b3518)
+
+4. Create a new Blueprint Actor -> Add a new component -> Skeleton mesh component -> Add the ABP you've just created in the Animation details, and add the mesh. This Blueprint will receive the animation.
+5. Drag and drop it in your scene to have a skeleton mesh ready to receive the broadcasted animation!
+
+***

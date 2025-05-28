@@ -165,28 +165,52 @@ void UCREWNetworkSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
 					ack->Add(command.index);
 					switch (command.type) {
 					case ECommandType::NoValue:
-						OnNetworkCommand.Broadcast(command.id);
+						AsyncTask(ENamedThreads::GameThread, [this, command]()
+							{
+								OnNetworkCommand.Broadcast(command.id);
+							});
 						break;
 					case ECommandType::Bool:
-						OnNetworkCommandWithBool.Broadcast(command.id, command.value_bool);
+						AsyncTask(ENamedThreads::GameThread, [this, command]()
+							{
+								OnNetworkCommandWithBool.Broadcast(command.id, command.value_bool);
+							});
 						break;
 					case ECommandType::Int:
-						OnNetworkCommandWithInt.Broadcast(command.id, command.value_int);
+						AsyncTask(ENamedThreads::GameThread, [this, command]()
+							{
+								OnNetworkCommandWithInt.Broadcast(command.id, command.value_int);
+							});
 						break;
 					case ECommandType::Float:
-						OnNetworkCommandWithFloat.Broadcast(command.id, command.value_float);
+						AsyncTask(ENamedThreads::GameThread, [this, command]()
+							{
+								OnNetworkCommandWithFloat.Broadcast(command.id, command.value_float);
+							});
 						break;
 					case ECommandType::Vector:
-						OnNetworkCommandWithVector.Broadcast(command.id, command.value_vector);
+						AsyncTask(ENamedThreads::GameThread, [this, command]()
+							{
+								OnNetworkCommandWithVector.Broadcast(command.id, command.value_vector);
+							});
 						break;
 					case ECommandType::Rotator:
-						OnNetworkCommandWithRotator.Broadcast(command.id, command.value_rotator);
+						AsyncTask(ENamedThreads::GameThread, [this, command]()
+							{
+								OnNetworkCommandWithRotator.Broadcast(command.id, command.value_rotator);
+							});
 						break;
 					case ECommandType::Transform:
-						OnNetworkCommandWithTransform.Broadcast(command.id, command.value_transform);
+						AsyncTask(ENamedThreads::GameThread, [this, command]()
+							{
+								OnNetworkCommandWithTransform.Broadcast(command.id, command.value_transform);
+							});
 						break;
 					case ECommandType::String:
-						OnNetworkCommandWithString.Broadcast(command.id, command.value_string);
+						AsyncTask(ENamedThreads::GameThread, [this, command]()
+							{
+								OnNetworkCommandWithString.Broadcast(command.id, command.value_string);
+							});
 						break;
 					default:
 						UE_LOG(LogTemp, Error, TEXT("Invalid type in a command"));

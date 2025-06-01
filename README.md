@@ -27,7 +27,7 @@ As soon as the plugin is in the project, the plugin is implemented in the Engine
 
 ![Screenshot 2025-05-21 165601](https://github.com/user-attachments/assets/c13125ef-baa0-49a5-a815-27365d4f6835)
 
-ICI EXPLIQUER MIEUX LE TRUC DE AUTOCONNECT OU PAS QUE G TJRS PAS COMPRIS
+If autoconnect is ticked, it will automatically connect to apps with the same name on the same network.
 ***
 ## Use case #1: Broadcast Pose Replication over Network 
 Directly with an Animation Blueprint, the *Replicate Pose* node allows live replication of an animation, wether it uses an animation from a MOCAP suit or any other type of animation, at the only condition that the streamed Skeleton Mesh and the receiver **posses the same Skeleton and have no level of details (Number of LODs must be set at 1).
